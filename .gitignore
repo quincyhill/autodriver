@@ -1,0 +1,12 @@
+# Basic Git Ignore stuff for python
+env/
+venv/
+.vscode/
+**/*.pyc
+**/__pycache__
+.env
+**/.mypy_cache
+**/.pytest_cache
+
+# For saving the network and testing purposes
+test.sqlite3
