@@ -77,8 +77,87 @@ def iterate_and_visualize_dataset(data_set):
         plt.axis("off")
         plt.imshow(img.squeeze(), cmap="gray")
     plt.show()
-
+    
+# I already know this isnt using cuda so no need to check it
+device = 'cpu'
+class MyNeuralNetwork(nn.Module):
+    def __init__(self):
+        super(MyNeuralNetwork, self).__init__()
+        self.flatten = nn.Flatten()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(28 * 28, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512,10),
+        )
+        
+    def forward(self, x):
+        x = self.flatten(x)
+        logits = self.linear_relu_stack(x)
+        return logits
+    
+    
 training_data, test_data = get_the_datasets()
 
 
-iterate_and_visualize_dataset(training_data)
+model = MyNeuralNetwork().to(device)
+
+loss_fn = nn.CrossEntropyLoss()
+
+optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+
+def train(dataloader: DataLoader, model: MyNeuralNetwork, loss_fn,  optimzer: torch.optim.SGD):
+    # In a single loop, model makes predictions on the training dataset (fed in batches) and backpropagates the
+    # prediction error to adjust the model parameters.
+
+    size = len(dataloader.dataset)
+    model.train()
+    for batch, (X, y) in enumerate(dataloader):
+        X, y = X.to(device), y.to(device)
+        
+        # Compute prediciton error
+        pred = model(X)
+        loss = loss_fn(pred, y)
+        
+        # Backpropagation
+        optimizer.zero_grad()
+        
+        # Will figure out its type later
+        loss.backward()
+
+        optimizer.step()
+        
+        if batch % 100 == 0:
+            loss, current = loss.item(), batch * len(X)
+            print(f"loss: {loss:>7f} [{current:>5d}/{size:>5d}]")
+
+def test(dataloader: DataLoader, model: MyNeuralNetwork, loss_fn):
+    # Checks the models performance against the test to ensure it is learning.
+
+    size = len(dataloader.dataset)
+    n_batches = len(dataloader)
+    model.eval()
+    test_loss, correct = 0, 0
+    with torch.no_grad():
+        for X, y in dataloader:
+            X, y = X.to(device), y.to(device)
+            pred = model(X)
+            test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float32).sum().item()
+    test_loss /= n_batches
+    correct /= size
+    print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Ave loss: {test_loss:>8f} \n")
+
+epochs = 5
+
+training_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE)
+test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE)
+
+for t in range(epochs):
+    print(f"Epoch {t + 1}\n ----------------")
+    train(training_dataloader, model, loss_fn, optimizer)
+    test(test_dataloader, model, loss_fn)
+print("Done!")
+
+torch.save(model.state_dict(), "basicmodel.pt")
