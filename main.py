@@ -151,13 +151,53 @@ def test(dataloader: DataLoader, model: MyNeuralNetwork, loss_fn):
 
 epochs = 5
 
+
+
 training_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE)
 test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE)
 
-for t in range(epochs):
-    print(f"Epoch {t + 1}\n ----------------")
-    train(training_dataloader, model, loss_fn, optimizer)
-    test(test_dataloader, model, loss_fn)
-print("Done!")
+# Run the model
 
-torch.save(model.state_dict(), "basicmodel.pt")
+def train_the_model():
+    for t in range(epochs):
+        print(f"Epoch {t + 1}\n ----------------")
+        train(training_dataloader, model, loss_fn, optimizer)
+        test(test_dataloader, model, loss_fn)
+    print("Done training!")
+
+    # Here I save the model after running it
+    torch.save(model.state_dict(), "basicmodel.pt")
+
+    
+
+def test_the_model():
+    # How well our model can be used to make predictions
+    classes = [
+        "T-shirt/top",
+        "Trouser",
+        "Pullover",
+        "Dress",
+        "Coat",
+        "Sandal",
+        "Shirt",
+        "Sneaker",
+        "Bag",
+        "Ankle boot",
+    ]
+    # Model being used for predictions
+    loaded_model = MyNeuralNetwork()
+
+    # Next I load that saved model from disk
+    loaded_model.load_state_dict(torch.load("basicmodel.pt"))
+
+    print("loaded the saved model")
+    
+    loaded_model.eval()
+    x, y = test_data[0][0], test_data[0][1]
+    with torch.no_grad():
+        pred = model(x)
+        predicted, actual = classes[pred[0].argmax(0)], classes[y]
+        print(f"Predicted: {predicted}, Actual: {actual}")
+
+
+test_the_model()
