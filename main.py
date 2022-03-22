@@ -1,9 +1,12 @@
 import torch
 from torch import nn
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
 from torchvision.transforms import ToTensor
+from torchvision.io import read_image
 import numpy as np
+import pandas as pd
+import os
 import matplotlib.pyplot as plt
 
 BATCH_SIZE = 64
@@ -98,6 +101,25 @@ class MyNeuralNetwork(nn.Module):
         logits = self.linear_relu_stack(x)
         return logits
     
+class CustomImageDataset(Dataset):
+    def __init__(self, annotations_file, img_dir, transform=None, target_transform=None):
+        self.img_lables = pd.read_csv(annotations_file)
+        self.img_dir = img_dir
+        self.transform = transform
+        self.target_transform = target_transform
+        
+    def __len__(self):
+        return len(self.img_lables)
+    
+    def __getitem__(self, idx):
+        img_path = os.path.join(self.img_dir, self.img_lables.iloc[idx, 0])
+        image = read_image(img_path)
+        label = self.img_lables.iloc[idx, 1]
+        if self.transform:
+            image = self.transform(image)
+        if self.target_transform:
+            label = self.target_transform(label)
+        return image, label
     
 
 
@@ -156,11 +178,6 @@ epochs = 5
 
 
 
-# one way to comment things out
-if False:
-    training_data, test_data = get_the_datasets()
-    training_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE)
-    test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE)
 
 # Run the model
 
@@ -309,4 +326,18 @@ def current_tensor_tests():
     print(f"Numpy n: {n}")
     print(f"Tensor t: {t}")
 
-current_tensor_tests()
+training_data, test_data = get_the_datasets()
+training_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE, shuffle=True)
+test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True)
+
+def iterate_throught_dataloader():
+    train_features, train_lables = next(iter(training_dataloader))
+    print(f"Feature batch shape: {train_features.size()}")
+    print(f"Labels batch shape: {train_lables.size()}")
+    img = train_features[0].squeeze()
+    label = train_lables[0]
+    plt.imshow(img, cmap='gray')
+    plt.show()
+    print(f"Label: {label}")
+    
+iterate_throught_dataloader()
