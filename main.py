@@ -1,44 +1,34 @@
-from pygame.locals import (
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_ESCAPE,
-    KEYDOWN,
-    QUIT
-)
+import torch
+from torch import nn
+from torch.utils.data import DataLoader
+from torchvision import datasets
+from torchvision.transforms import ToTensor
 
-import math
-import random
-import sys
-import os
-import pygame
-import sqlite3
+def get_all_my_data(batch_size):
+    # Download training data from open datasets
+    training_data = datasets.FashionMNIST(
+        root='./data',
+        train=True,
+        download=False,
+        transform=ToTensor()
+    )
+    
+    # Download test data from open datasets
+    test_data = datasets.FashionMNIST(
+        root="./data",
+        train=False,
+        download=False,
+        transform=ToTensor()
+    )
+    
+    train_dataloader = DataLoader(training_data, batch_size=batch_size)
+    test_dataloader = DataLoader(test_data, batch_size=batch_size)
+    
+    for X, y in test_dataloader:
+        print(f"Shape of X [N, C, H, W]: {X.shape}")
+        print(f"Shape of y [N]: {y.shape}")
+        break
+    
 
-pygame.init()
 
-# Sets screen dimensions
-screen = pygame.display.set_mode((800, 600))
-
-# Run until user quits
-running = True
-while running:
-    # Did the user click the window close button?
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            running = False
-        if event.type == KEYDOWN:
-            if event.key == K_DOWN:
-                print("down")
-    
-    # Fill the screen with grey
-    screen.fill((200, 200, 200))
-    
-    # Draw a circle in the middle of the screen
-    pygame.draw.circle(screen, (0, 0, 0), (400, 300), 100)
-    
-    # Flip the display
-    pygame.display.flip()
-    
-# Done! Quit the game
-pygame.quit()
+get_all_my_data(64)

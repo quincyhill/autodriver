@@ -10,3 +10,9 @@ venv/
 
 # For saving the network and testing purposes
 test.sqlite3
+
+# Models
+model
+
+# Data
+data
