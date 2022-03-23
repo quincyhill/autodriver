@@ -1,3 +1,4 @@
+from ast import Lambda
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
@@ -58,6 +59,7 @@ def print_shape(data_set):
         break
 
 def iterate_and_visualize_dataset(data_set):
+    # NOTE: refactor to allow multiple datasets and display them respectively with their titles
     labels_map = {
         0: "T-Shirt",
         1: "Trouser",
@@ -121,15 +123,6 @@ class CustomImageDataset(Dataset):
             label = self.target_transform(label)
         return image, label
     
-
-
-# Not using this right now
-if False:
-    model = MyNeuralNetwork().to(device)
-    
-    loss_fn = nn.CrossEntropyLoss()
-    
-    optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
 
 
 def train(dataloader: DataLoader, model: MyNeuralNetwork, loss_fn,  optimzer: torch.optim.SGD):
@@ -326,9 +319,6 @@ def current_tensor_tests():
     print(f"Numpy n: {n}")
     print(f"Tensor t: {t}")
 
-training_data, test_data = get_the_datasets()
-training_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE, shuffle=True)
-test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True)
 
 def iterate_throught_dataloader():
     train_features, train_lables = next(iter(training_dataloader))
@@ -340,4 +330,70 @@ def iterate_throught_dataloader():
     plt.show()
     print(f"Label: {label}")
     
-iterate_throught_dataloader()
+    
+    
+# Already have the datasets locally so no need to download
+# ds = datasets.FashionMNIST(
+#     root="./data",
+#     train=True,
+#     download=False,
+#     transform=ToTensor(),
+#     target_transform=Lambda(lambda y: torch.zeros(10, dtype=torch.float64).scatter_(0, torch.tensor(y), value=1))
+# )
+
+if __name__ == '__main__':
+    # Only need to device if you want to use GPU, default is CPU 
+    model = MyNeuralNetwork().to(device)
+
+    # training_data, test_data = get_the_datasets()
+    # training_dataloader = DataLoader(training_data, batch_size=BATCH_SIZE, shuffle=True)
+    # test_dataloader = DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True)
+    
+    X = torch.rand(1, 28, 28, device=device)
+    logits = model(X)
+    pred_probab = nn.Softmax(dim=1)(logits)
+    y_pred = pred_probab.argmax(1)
+    
+    # Take a sample minibatch of 3 images of size 28 x 28 and see what happens to it as we pass it through the model
+    input_image = torch.rand(3,28,28)
+    print(f"Input image size: {input_image.size()}")
+    
+    # Initialize the nn.Flatten layer to convert each 2D 28 x 28 image into a 1D 784 vector
+    # The minibatch dimension at dim=0 is maintained
+    flatten = nn.Flatten()
+    flat_image = flatten(input_image)
+    print(f"Flattened image size: {flat_image.size()}")
+    
+    # The linear layer is a module that applies a linear transformation on the input using its stored weights and biases.
+    layer1 = nn.Linear(in_features=28 * 28, out_features=20)
+    hidden1 = layer1(flat_image)
+    print(f"Hidden layer 1 size: {hidden1.size()}")
+    
+    # The Non linear activation are what create the complex mappings between the models inputs and outputs.
+    # They are applied after linear transforations to introduce nonlinearity, helping the networks learn a
+    # wide variety of phenomena.
+    
+    print(f"Before ReLU: {hidden1}\n \n")
+    hidden1 = nn.ReLU()(hidden1)
+    print(f"After ReLU: {hidden1}")
+    
+    
+    # nn.Sequential is an ordered container of modules, data is passed through all the modules in the same order as defined.
+    # You can use sequential containers to put together a quick network like seq_modules.
+    seq_modules = nn.Sequential(
+        flatten,
+        layer1,
+        nn.ReLU(),
+        nn.Linear(20,10)
+    )
+    
+    input_image = torch.rand(3,28,28)
+    logits = seq_modules(input_image)
+    
+    # nn.Softmax is the last linear layer of the neural network, it returnts logits, raw values in [-inf, inf]
+    softmax = nn.Softmax(dim=1)
+    pred_probab = softmax(logits)
+
+    print(f"Model structure: {model}\n \n")
+    for name, param in model.named_parameters():
+        print(f"Layer: {name} | Size: {param.size()} | Values: {param[:2]}\n")
