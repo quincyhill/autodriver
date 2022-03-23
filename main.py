@@ -2,6 +2,7 @@ from ast import Lambda
 import torch
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
+import torch.nn.functional as F
 from torchvision import datasets
 from torchvision.transforms import ToTensor
 from torchvision.io import read_image
@@ -9,6 +10,7 @@ import numpy as np
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import math
 
 BATCH_SIZE = 64
 EPOCHS = 10
@@ -398,6 +400,39 @@ def building_and_testing_neural_net():
     print(f"Model structure: {model}\n \n")
     for name, param in model.named_parameters():
         print(f"Layer: {name} | Size: {param.size()} | Values: {param[:2]}\n")
+        
+class LeNet(nn.Module):
+
+    def __init__(self):
+        super(LeNet, self).__init__()
+        # 1 input image channel (black & white), 6 output channels, 3 x 3 square convolution kernel
+        # kernel
+        self.conv1 = nn.Conv2d(1, 6, 3)
+        self.conv2 = nn.Conv2d(6, 16, 3)
+        self.fc1 = nn.Linear(16 * 6 * 6, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84, 10)
+        
+    def forward(self, x):
+        # Max pooling over a (2, 2) window
+        x = F.max_pool2d(F.relu(self.conv1(x)), (2, 2))
+        pass
+    
+    def num_flat_features(self, x):
+        size = x.size()[1:]  # all dimensions except the batch dimension
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features
+    
+def matplotlib_stuff():
+    trend = np.linspace(10, 100, 100)
+    x = np.linspace(-math.pi, math.pi, 100)
+    sin_wave = np.sinh(x) * 10
+    noise = np.random.normal(0, 5, 100)
+    noisey_sine = sin_wave + noise
+    plt.plot(noisey_sine)
+    plt.show()
 
 if __name__ == '__main__':
         
@@ -433,9 +468,11 @@ if __name__ == '__main__':
         out.backward(torch.ones_like(inp), retain_graph=True)
         print(f"\n Call after zeroing gradients\n{inp.grad}")
         
-    model = MyNeuralNetwork()
-    print(model)
+    r1 = torch.rand(2,2)
     
-    loss_fn = nn.CrossEntropyLoss()
+    print(f"Determinant of r1: {torch.det(r1)}")
+    print(f"Sin of r1: {torch.sin(r1)}")
+    print(f"Average standard deviation of r1: {torch.std(r1)}")
     
-    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
+    matplotlib_stuff()
+    
