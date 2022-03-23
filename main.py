@@ -341,7 +341,7 @@ def iterate_throught_dataloader():
 #     target_transform=Lambda(lambda y: torch.zeros(10, dtype=torch.float64).scatter_(0, torch.tensor(y), value=1))
 # )
 
-if __name__ == '__main__':
+def building_and_testing_neural_net():
     # Only need to device if you want to use GPU, default is CPU 
     model = MyNeuralNetwork().to(device)
 
@@ -397,3 +397,36 @@ if __name__ == '__main__':
     print(f"Model structure: {model}\n \n")
     for name, param in model.named_parameters():
         print(f"Layer: {name} | Size: {param.size()} | Values: {param[:2]}\n")
+
+if __name__ == '__main__':
+        
+    # Automatic differentiation with autograd
+    x = torch.ones(5) # input tensor
+    y = torch.zeros(3) # expected output
+    
+    w = torch.randn(5, 3, requires_grad=True) # weight tensor
+    b = torch.randn(3, requires_grad=True) # bias tensor
+
+    z = torch.matmul(x, w) + b # linear transformation
+    z_det = z.detach()
+    print(z_det.requires_grad)
+    
+    loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y) # loss function
+    
+    print(f"Gradient function for z = {z.grad_fn}")
+    print(f"Gradient funciton for loss = {loss.grad_fn}")
+
+    loss.backward() # backpropagate the loss
+    print(w.grad)
+    print(b.grad)
+    
+    # Calculate the jacobian product myself
+    inp = torch.eye(5, requires_grad=True)
+    out = (inp + 1).pow(2)
+    out.backward(torch.ones_like(inp), retain_graph=True)
+    print(f"First call\n{inp.grad}")
+    out.backward(torch.ones_like(inp), retain_graph=True)
+    print(f"\nSecond call\n{inp.grad}")
+    inp.grad.zero_()
+    out.backward(torch.ones_like(inp), retain_graph=True)
+    print(f"\n Call after zeroing gradients\n{inp.grad}")
