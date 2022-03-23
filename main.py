@@ -11,6 +11,8 @@ import os
 import matplotlib.pyplot as plt
 
 BATCH_SIZE = 64
+EPOCHS = 10
+LEARNING_RATE = 1e-3
 
 def download_the_datasets():
     # Download training data from open datasets
@@ -167,7 +169,6 @@ def test(dataloader: DataLoader, model: MyNeuralNetwork, loss_fn):
     correct /= size
     print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Ave loss: {test_loss:>8f} \n")
 
-epochs = 5
 
 
 
@@ -175,7 +176,7 @@ epochs = 5
 # Run the model
 
 def train_the_model():
-    for t in range(epochs):
+    for t in range(EPOCHS):
         print(f"Epoch {t + 1}\n ----------------")
         train(training_dataloader, model, loss_fn, optimizer)
         test(test_dataloader, model, loss_fn)
@@ -408,25 +409,33 @@ if __name__ == '__main__':
     b = torch.randn(3, requires_grad=True) # bias tensor
 
     z = torch.matmul(x, w) + b # linear transformation
-    z_det = z.detach()
-    print(z_det.requires_grad)
-    
-    loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y) # loss function
-    
-    print(f"Gradient function for z = {z.grad_fn}")
-    print(f"Gradient funciton for loss = {loss.grad_fn}")
-
-    loss.backward() # backpropagate the loss
-    print(w.grad)
-    print(b.grad)
     
     # Calculate the jacobian product myself
-    inp = torch.eye(5, requires_grad=True)
-    out = (inp + 1).pow(2)
-    out.backward(torch.ones_like(inp), retain_graph=True)
-    print(f"First call\n{inp.grad}")
-    out.backward(torch.ones_like(inp), retain_graph=True)
-    print(f"\nSecond call\n{inp.grad}")
-    inp.grad.zero_()
-    out.backward(torch.ones_like(inp), retain_graph=True)
-    print(f"\n Call after zeroing gradients\n{inp.grad}")
+    if False:
+        z_det = z.detach()
+        print(z_det.requires_grad)
+        
+        loss = torch.nn.functional.binary_cross_entropy_with_logits(z, y) # loss function
+        
+        print(f"Gradient function for z = {z.grad_fn}")
+        print(f"Gradient funciton for loss = {loss.grad_fn}")
+
+        loss.backward() # backpropagate the loss
+        print(w.grad)
+        print(b.grad)
+        inp = torch.eye(5, requires_grad=True)
+        out = (inp + 1).pow(2)
+        out.backward(torch.ones_like(inp), retain_graph=True)
+        print(f"First call\n{inp.grad}")
+        out.backward(torch.ones_like(inp), retain_graph=True)
+        print(f"\nSecond call\n{inp.grad}")
+        inp.grad.zero_()
+        out.backward(torch.ones_like(inp), retain_graph=True)
+        print(f"\n Call after zeroing gradients\n{inp.grad}")
+        
+    model = MyNeuralNetwork()
+    print(model)
+    
+    loss_fn = nn.CrossEntropyLoss()
+    
+    optimizer = torch.optim.SGD(model.parameters(), lr=LEARNING_RATE)
